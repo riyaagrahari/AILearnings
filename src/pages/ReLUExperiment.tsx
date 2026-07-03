@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Layers, Play, Pause, StopCircle, RefreshCcw, Shuffle, Sparkles, Database, SlidersHorizontal } from "lucide-react";
 import type { Dataset, DatasetGeneratorOptions } from "../experiments/relu/dataset";
 import { generateConcentricCircles, datasetToTensors } from "../experiments/relu/dataset";
@@ -9,7 +9,7 @@ import Plot from "react-plotly.js";
 type TrainingState = "idle" | "running" | "paused";
 
 const CANVAS_SIZE = 360;
-const GRID_RES = 96;
+const GRID_RES = 180;
 
 function buildLinearModel(tff: any): LayersModel {
 	const model = tff.sequential();
@@ -78,27 +78,31 @@ function renderHeatmap(
 			const i = y * gridResolution + x;
 			const p = probabilities[i];
 
-			// color: interpolate between blue (class 0) and orange (class 1)
-			const r = Math.round(255 * p);
-			const g = Math.round(120 * (1 - p));
-			const b = Math.round(255 * (1 - p));
+			const blue = { r: 102, g: 179, b: 255 };
+			const orange = { r: 255, g: 138, b: 80 };
+			const r = Math.round(blue.r * (1 - p) + orange.r * p);
+			const g = Math.round(blue.g * (1 - p) + orange.g * p);
+			const b = Math.round(blue.b * (1 - p) + orange.b * p);
 
 			const idx = (y * gridResolution + x) * 4;
 			img.data[idx] = r;
 			img.data[idx + 1] = g;
 			img.data[idx + 2] = b;
-			img.data[idx + 3] = 200;
+			img.data[idx + 3] = 180;
 		}
 	}
 
-	// scale up image to canvas
 	const tmp = document.createElement("canvas");
 	tmp.width = gridResolution;
 	tmp.height = gridResolution;
 	const tctx = tmp.getContext("2d")!;
 	tctx.putImageData(img, 0, 0);
+	tctx.imageSmoothingEnabled = true;
+	ctx.save();
 	ctx.imageSmoothingEnabled = true;
+	ctx.globalAlpha = 0.94;
 	ctx.drawImage(tmp, 0, 0, size, size);
+	ctx.restore();
 }
 
 function drawPoints(ctx: CanvasRenderingContext2D, size: number, points: Dataset["points"], radius: number) {
@@ -107,15 +111,23 @@ function drawPoints(ctx: CanvasRenderingContext2D, size: number, points: Dataset
 	const scale = size / (radius * 4);
 	const center = size / 2;
 
+	ctx.lineWidth = 1.5;
+	ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
+	ctx.shadowBlur = 4;
+	ctx.shadowOffsetX = 0;
+	ctx.shadowOffsetY = 2;
+
 	for (const p of points) {
 		const cx = center + p.x * scale;
 		const cy = center - p.y * scale;
+		const fill = p.label === 1 ? "#ff8a50" : "#66b3ff";
+		const stroke = p.label === 1 ? "rgba(255,138,80,0.9)" : "rgba(102,179,255,0.9)";
 
 		ctx.beginPath();
-		ctx.fillStyle = p.label === 1 ? "#ff8a50" : "#66b3ff";
 		ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+		ctx.fillStyle = fill;
 		ctx.fill();
-		ctx.strokeStyle = "rgba(0,0,0,0.2)";
+		ctx.strokeStyle = stroke;
 		ctx.stroke();
 	}
 
@@ -147,6 +159,41 @@ export default function ReLUExperiment(): React.ReactElement {
 	const [accHistoryA, setAccHistoryA] = useState<number[]>([]);
 	const [lossHistoryB, setLossHistoryB] = useState<number[]>([]);
 	const [accHistoryB, setAccHistoryB] = useState<number[]>([]);
+	const [trainingComplete, setTrainingComplete] = useState(false);
+
+	const resultsSummary = useMemo(() => {
+		if (!trainingComplete || epochCount === 0) return null;
+
+		const linearLoss = Number(lossHistoryA.slice(-1)[0] ?? 0);
+		const reluLoss = Number(lossHistoryB.slice(-1)[0] ?? 0);
+		const linearAccuracy = Number(accHistoryA.slice(-1)[0] ?? 0);
+		const reluAccuracy = Number(accHistoryB.slice(-1)[0] ?? 0);
+		const linearAccPct = Math.round(linearAccuracy * 100);
+		const reluAccPct = Math.round(reluAccuracy * 100);
+
+		const explanation = `The linear model converged but achieved only ${linearAccPct}% accuracy because it can only learn a straight decision boundary. The ReLU network achieved ${reluAccPct}% accuracy after learning a nonlinear circular boundary.`;
+		const conclusion = reluAccuracy > linearAccuracy
+			? `The ReLU model’s non-linear activation enabled it to capture the concentric circle pattern much better than the linear model.`
+			: `The linear model performed similarly to the ReLU network, but the ReLU model still has more expressive power for this dataset.`;
+
+		return {
+			linearLoss,
+			reluLoss,
+			linearAccuracy,
+			reluAccuracy,
+			explanation,
+			conclusion,
+		};
+	}, [trainingComplete, epochCount, lossHistoryA, accHistoryA, lossHistoryB, accHistoryB]);
+
+	const percentComplete = epochs > 0 ? Math.min(100, Math.round((epochCount / epochs) * 100)) : 0;
+	const trainingStatusLabel = trainingComplete
+		? "✓ Training Complete"
+		: state === "running"
+		? "Training"
+		: state === "paused"
+		? "Paused"
+		: "Idle";
 
 	const canvasARef = useRef<HTMLCanvasElement | null>(null);
 	const canvasBRef = useRef<HTMLCanvasElement | null>(null);
@@ -200,8 +247,9 @@ export default function ReLUExperiment(): React.ReactElement {
 			// cleanup models on unmount
 			modelARef.current?.dispose();
 			modelBRef.current?.dispose();
-			tensorsRef.current?.xs?.dispose();
-			tensorsRef.current?.ys?.dispose();
+			// guard individual disposals with optional chaining to avoid runtime errors
+			tensorsRef.current?.xs?.dispose?.();
+			tensorsRef.current?.ys?.dispose?.();
 		};
 	}, []);
 
@@ -218,12 +266,34 @@ export default function ReLUExperiment(): React.ReactElement {
 		const optA = tfRef.current.train.adam(learningRate);
 		const optB = tfRef.current.train.adam(learningRate);
 
-		a.compile({ optimizer: optA, loss: "binaryCrossentropy", metrics: ["accuracy"] });
-		b.compile({ optimizer: optB, loss: "binaryCrossentropy", metrics: ["accuracy"] });
+		a.compile({ optimizer: optA, loss: "binaryCrossentropy" });
+		b.compile({ optimizer: optB, loss: "binaryCrossentropy" });
 
 		modelARef.current = a;
 		modelBRef.current = b;
 		tfRef.current.engine().endScope();
+	}
+
+	async function computeAccuracy(model: LayersModel, xs: Tensor2D, ys: Tensor): Promise<number> {
+		if (!tfRef.current) await ensureTfLoaded();
+
+		const predictions = model.predict(xs) as Tensor;
+		const threshold = tfRef.current.scalar(0.5);
+		const binary = tfRef.current.greater(predictions, threshold).toInt();
+		const labels = ys.toInt();
+		const correct = tfRef.current.equal(binary, labels).toFloat();
+		const accuracyTensor = correct.mean();
+
+		const accuracy = (await accuracyTensor.data())[0];
+
+		predictions.dispose();
+		threshold.dispose();
+		binary.dispose();
+		labels.dispose();
+		correct.dispose();
+		accuracyTensor.dispose();
+
+		return accuracy;
 	}
 
 	async function handleGenerate() {
@@ -234,6 +304,7 @@ export default function ReLUExperiment(): React.ReactElement {
 		setAccHistoryA([]);
 		setLossHistoryB([]);
 		setAccHistoryB([]);
+		setTrainingComplete(false);
 		pausedRef.current = false;
 		await resetModels();
 	}
@@ -242,6 +313,7 @@ export default function ReLUExperiment(): React.ReactElement {
 		if (!tensorsRef.current || !modelARef.current || !modelBRef.current) return;
 
 		setState("running");
+		setTrainingComplete(false);
 		stopRef.current = false;
 
 		const xs = tensorsRef.current!.xs!;
@@ -256,11 +328,11 @@ export default function ReLUExperiment(): React.ReactElement {
 				modelBRef.current!.fit(xs, ys, { epochs: 1, batchSize, shuffle: true }),
 			]);
 
-			// compute metrics from ReLU model (resB)
 			const lossA = resA.history.loss ? (resA.history.loss as number[]).slice(-1)[0] : NaN;
-			const accA = resA.history.accuracy ? (resA.history.accuracy as number[]).slice(-1)[0] : NaN;
 			const lossB = resB.history.loss ? (resB.history.loss as number[]).slice(-1)[0] : NaN;
-			const accB = resB.history.accuracy ? (resB.history.accuracy as number[]).slice(-1)[0] : NaN;
+
+			const accA = await computeAccuracy(modelARef.current!, xs, ys);
+			const accB = await computeAccuracy(modelBRef.current!, xs, ys);
 
 			setEpochCount((p) => p + 1);
 			setLossHistoryA((h) => [...h, Number(lossA ?? NaN)]);
@@ -287,7 +359,8 @@ export default function ReLUExperiment(): React.ReactElement {
 			}
 		}
 
-		setState(stopRef.current ? "idle" : "idle");
+		setTrainingComplete(!stopRef.current);
+		setState("idle");
 	}
 
 	async function updateDecisionBoundaries() {
@@ -385,6 +458,7 @@ export default function ReLUExperiment(): React.ReactElement {
 	function handleStop() {
 		stopRef.current = true;
 		pausedRef.current = false;
+		setTrainingComplete(false);
 		setState("idle");
 	}
 
@@ -395,6 +469,7 @@ export default function ReLUExperiment(): React.ReactElement {
 		setAccHistoryA([]);
 		setLossHistoryB([]);
 		setAccHistoryB([]);
+		setTrainingComplete(false);
 		resetModels();
 		updateDecisionBoundaries();
 	}
@@ -426,10 +501,60 @@ export default function ReLUExperiment(): React.ReactElement {
 	}, [canvasARef.current, canvasBRef.current, dataset]);
 
 	return (
-		<div style={{ padding: 20, color: "white", fontFamily: "Inter, Arial" }}>
-			<h2 style={{ fontSize: 24, marginBottom: 8 }}>Why ReLU Matters</h2>
+		<div className="p-5 text-white" style={{ fontFamily: "Inter, Arial" }}>
+			<div className="grid gap-8 xl:grid-cols-[1.7fr_1fr]">
+				<div className="space-y-5">
+					<div className="inline-flex items-center gap-3 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.28em] text-cyan-300 shadow-sm shadow-cyan-400/10">
+						<span>Experiment 1</span>
+					</div>
+					<p className="text-sm uppercase tracking-[0.28em] text-slate-400">Visual Proofs of Deep Learning</p>
+					<h1 className="max-w-2xl text-4xl font-semibold leading-tight text-white sm:text-5xl">Depth without Nonlinearity is a Lie</h1>
+					<p className="max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+						A linear classifier can only separate data with a single straight decision boundary, so concentric circles remain inseparable. ReLU introduces non-linear activation and piecewise expressivity, giving the model the power to learn circular boundaries and generalize more complex patterns.
+					</p>
+				</div>
 
-			<div className="flex flex-col gap-16 xl:flex-row">
+				<div className="grid gap-4 sm:grid-cols-3">
+					<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+						<p className="text-xs uppercase tracking-[0.2em] text-slate-500">Dataset</p>
+						<p className="mt-3 text-lg font-semibold text-white">Concentric Circles</p>
+					</div>
+
+					<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+						<p className="text-xs uppercase tracking-[0.2em] text-slate-500">Models</p>
+						<p className="mt-3 text-lg font-semibold text-white">Linear vs ReLU</p>
+					</div>
+
+					<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+						<p className="text-xs uppercase tracking-[0.2em] text-slate-500">Framework</p>
+						<p className="mt-3 text-lg font-semibold text-white">TensorFlow.js</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="mt-8 rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+					<div>
+						<div className="text-sm uppercase tracking-[0.18em] text-slate-400">Epoch</div>
+						<div className="mt-2 text-3xl font-semibold text-white">{epochCount} / {epochs}</div>
+					</div>
+					<div className="rounded-2xl bg-slate-900/90 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-slate-700">
+						{trainingStatusLabel}
+					</div>
+				</div>
+
+				<div className="mt-6">
+					<div className="mb-3 flex items-center justify-between gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+						<span>Progress</span>
+						<span>{percentComplete}%</span>
+					</div>
+					<div className="h-3 overflow-hidden rounded-full bg-slate-900/90 ring-1 ring-slate-700">
+						<div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-violet-500 transition-all duration-700 ease-out" style={{ width: `${percentComplete}%` }} />
+					</div>
+				</div>
+			</div>
+
+			<div className="mt-10 flex flex-col gap-16 xl:flex-row">
 				<div className="flex flex-col gap-6 xl:w-96">
 				<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
 					<div className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">
@@ -617,27 +742,30 @@ export default function ReLUExperiment(): React.ReactElement {
 					</div>
 					<div className="grid gap-3">
 						<button
+							type="button"
 							onClick={handleGenerate}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-cyan-500/20 transition transform-gpu hover:-translate-y-0.5 hover:bg-cyan-400 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 focus-visible:ring-offset-2"
+							aria-label="Generate dataset"
 						>
 							<RefreshCcw className="h-4 w-4" />
 							Generate Dataset
-						</button>
-
-						<button
-							onClick={() => {
-							setOptions({ ...options, seed: options.seed + 1 });
-							setDataset(generateConcentricCircles({ ...options, seed: options.seed + 1 }));
-						}}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+							</button>
+							<button type="button" onClick={() => {
+								setOptions({ ...options, seed: options.seed + 1 });
+								setDataset(generateConcentricCircles({ ...options, seed: options.seed + 1 }));
+							}} 
+							className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm font-semibold text-slate-100 transition transform-gpu hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500/50 focus-visible:ring-offset-2"
+							aria-label="Shuffle dataset"
 						>
 							<Shuffle className="h-4 w-4" />
 							Shuffle
 						</button>
 
 						<button
+							type="button"
 							onClick={handleReset}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+							className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm font-semibold text-slate-100 transition transform-gpu hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500/50 focus-visible:ring-offset-2"
+							aria-label="Reset training"
 						>
 							<StopCircle className="h-4 w-4" />
 							Reset
@@ -645,38 +773,38 @@ export default function ReLUExperiment(): React.ReactElement {
 					</div>
 
 					<div className="mt-4 grid gap-3 sm:grid-cols-2">
-						<button
+						<button type="button"
 							onClick={() => {
 							pausedRef.current = false;
 							setState("running");
 							stopRef.current = false;
 							trainLoop();
 						}}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-emerald-500/20 transition transform-gpu hover:-translate-y-0.5 hover:bg-emerald-400 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 focus-visible:ring-offset-2"
 						>
 							<Play className="h-4 w-4" />
 							Train
 						</button>
 
-						<button
+						<button type="button"
 							onClick={handlePause}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 transition transform-gpu hover:-translate-y-0.5 hover:bg-slate-700 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500/50 focus-visible:ring-offset-2"
 						>
 							<Pause className="h-4 w-4" />
 							Pause
 						</button>
 
-						<button
+						<button type="button"
 							onClick={handleResume}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 transition transform-gpu hover:-translate-y-0.5 hover:bg-slate-700 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500/50 focus-visible:ring-offset-2"
 						>
 							<Play className="h-4 w-4 rotate-180" />
 							Resume
 						</button>
 
-						<button
+						<button type="button"
 							onClick={handleStop}
-							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-rose-500/20 transition hover:-translate-y-0.5 hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/50"
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-rose-500/20 transition transform-gpu hover:-translate-y-0.5 hover:bg-rose-400 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 focus-visible:ring-offset-2"
 						>
 							<StopCircle className="h-4 w-4" />
 							Stop
@@ -686,50 +814,67 @@ export default function ReLUExperiment(): React.ReactElement {
 
 				</div>
 
-				<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-					<div style={{ display: "flex", gap: 8 }}>
-						<div style={{ background: "#071029", padding: 8 }}>
-							<div style={{ fontWeight: 600, marginBottom: 6 }}>Linear</div>
-							<div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
-									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Epoch</div>
-									<div style={{ fontWeight: 700 }}>{epochCount}</div>
-								</div>
-								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
-									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Loss</div>
-									<div style={{ fontWeight: 700 }}>{(lossHistoryA.slice(-1)[0] ?? "-")}</div>
-								</div>
-								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
-									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Accuracy</div>
-									<div style={{ fontWeight: 700 }}>{Math.round((accHistoryA.slice(-1)[0] ?? 0) * 100)}%</div>
-								</div>
+				<div className="flex flex-col gap-6">
+					<div className="flex flex-col gap-8">
+						<div className="flex flex-wrap gap-3 items-center">
+							<div className="inline-flex items-center gap-3 bg-slate-900/95 border border-white/8 rounded-xl px-3 py-2">
+								<div className="w-2.5 h-2.5 rounded-full bg-[#66b3ff]" />
+								<div className="text-slate-300 text-xs">Blue = Class 0</div>
 							</div>
-							<canvas ref={canvasARef} width={CANVAS_SIZE} height={CANVAS_SIZE} />
+							<div className="inline-flex items-center gap-3 bg-slate-900/95 border border-white/8 rounded-xl px-3 py-2">
+								<div className="w-2.5 h-2.5 rounded-full bg-[#ff8a50]" />
+								<div className="text-slate-300 text-xs">Orange = Class 1</div>
+							</div>
 						</div>
 
-						<div style={{ background: "#071029", padding: 8 }}>
-							<div style={{ fontWeight: 600, marginBottom: 6 }}>ReLU</div>
-							<div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
-									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Epoch</div>
-									<div style={{ fontWeight: 700 }}>{epochCount}</div>
-								</div>
-								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
-									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Loss</div>
-									<div style={{ fontWeight: 700 }}>{(lossHistoryB.slice(-1)[0] ?? "-")}</div>
-								</div>
-								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
-									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Accuracy</div>
-									<div style={{ fontWeight: 700 }}>{Math.round((accHistoryB.slice(-1)[0] ?? 0) * 100)}%</div>
+						<div className="flex gap-4 items-start">
+							<div className="bg-[#071029] p-3 rounded-lg ring-1 ring-slate-800 w-[220px]" role="group" aria-label="Linear model metrics">
+								<div className="font-semibold mb-2 text-white">Linear</div>
+								<div className="flex gap-3 mb-3">
+									<div className="bg-[#011025] p-2 rounded-md text-slate-200">
+										<div className="text-xs text-slate-400">Epoch</div>
+										<div className="font-bold text-lg">{epochCount}</div>
+									</div>
+									<div className="bg-[#011025] p-2 rounded-md text-slate-200">
+										<div className="text-xs text-slate-400">Loss</div>
+										<div className="font-bold text-lg">{(lossHistoryA.slice(-1)[0] ?? "-")}</div>
+									</div>
+									<div className="bg-[#011025] p-2 rounded-md text-slate-200">
+										<div className="text-xs text-slate-400">Accuracy</div>
+										<div className="font-bold text-lg">{Math.round((accHistoryA.slice(-1)[0] ?? 0) * 100)}%</div>
+									</div>
 								</div>
 							</div>
-							<canvas ref={canvasBRef} width={CANVAS_SIZE} height={CANVAS_SIZE} />
+							<div className="rounded-lg overflow-hidden ring-1 ring-slate-800">
+								<canvas ref={canvasARef} width={CANVAS_SIZE} height={CANVAS_SIZE} role="img" aria-label="Linear model decision boundary" tabIndex={0} />
+							</div>
+						</div>
+
+						<div className="bg-[#071029] p-3 rounded-lg ring-1 ring-slate-800 w-[220px]">
+							<div className="font-semibold mb-2 text-white">ReLU</div>
+							<div className="flex gap-3 mb-3">
+								<div className="bg-[#011025] p-2 rounded-md text-slate-200">
+									<div className="text-xs text-slate-400">Epoch</div>
+									<div className="font-bold text-lg">{epochCount}</div>
+								</div>
+								<div className="bg-[#011025] p-2 rounded-md text-slate-200">
+									<div className="text-xs text-slate-400">Loss</div>
+									<div className="font-bold text-lg">{(lossHistoryB.slice(-1)[0] ?? "-")}</div>
+								</div>
+								<div className="bg-[#011025] p-2 rounded-md text-slate-200">
+									<div className="text-xs text-slate-400">Accuracy</div>
+									<div className="font-bold text-lg">{Math.round((accHistoryB.slice(-1)[0] ?? 0) * 100)}%</div>
+								</div>
+							</div>
+						</div>
+						<div className="rounded-lg overflow-hidden ring-1 ring-slate-800">
+							<canvas ref={canvasBRef} width={CANVAS_SIZE} height={CANVAS_SIZE} role="img" aria-label="ReLU model decision boundary" tabIndex={0} />
 						</div>
 					</div>
 
-					<div style={{ display: "flex", gap: 8 }}>
-						<div style={{ width: 360, height: 120, background: "#041027", padding: 8 }}>
-							<div style={{ fontWeight: 600 }}>Live Loss</div>
+					<div className="flex flex-wrap gap-3">
+						<div className="w-[360px] h-[120px] bg-[#041027] p-3 rounded-lg ring-1 ring-slate-800">
+							<div className="font-semibold">Live Loss</div>
 							<Plot
 								data={[
 									{
@@ -765,8 +910,8 @@ export default function ReLUExperiment(): React.ReactElement {
 							/>
 						</div>
 
-						<div style={{ width: 360, height: 120, background: "#041027", padding: 8 }}>
-							<div style={{ fontWeight: 600 }}>Live Accuracy</div>
+						<div className="w-[360px] h-[120px] bg-[#041027] p-3 rounded-lg ring-1 ring-slate-800">
+							<div className="font-semibold">Live Accuracy</div>
 							<Plot
 								data={[
 									{
@@ -803,27 +948,94 @@ export default function ReLUExperiment(): React.ReactElement {
 						</div>
 					</div>
 
-					<div style={{ width: 740, background: "#021022", padding: 12 }}>
-						<div style={{ fontWeight: 700, marginBottom: 6 }}>Educational Panel</div>
-						<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+					<div className={`w-full rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-[0_24px_100px_-60px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all duration-700 ${resultsSummary ? "opacity-100" : "opacity-40"}`}>
+						<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<div>
-								<div style={{ fontWeight: 600 }}>Claim</div>
-								<div>Linear models cannot separate concentric circles.</div>
+								<div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Claim</div>
+								<div className="mt-2 text-xl font-semibold text-white">Linear models cannot separate concentric circles.</div>
+							</div>
+							<div className="rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-sm text-slate-300">
+								{resultsSummary ? "Training complete" : "Summary pending"}
+							</div>
+						</div>
+
+						<div className="grid gap-4 lg:grid-cols-2">
+							<div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4">
+								<div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+									<Layers className="h-4 w-4 text-orange-300" />
+									<span>Linear Model</span>
+								</div>
+								<div className="grid gap-3">
+									<div className="rounded-2xl bg-slate-950/80 p-3">
+										<div className="text-xs uppercase tracking-[0.2em] text-slate-500">Final Accuracy</div>
+										<div className="mt-1 text-2xl font-semibold text-white">{resultsSummary ? `${Math.round(resultsSummary.linearAccuracy * 100)}%` : "—"}</div>
+									</div>
+									<div className="rounded-2xl bg-slate-950/80 p-3">
+										<div className="text-xs uppercase tracking-[0.2em] text-slate-500">Final Loss</div>
+										<div className="mt-1 text-2xl font-semibold text-white">{resultsSummary ? resultsSummary.linearLoss.toFixed(3) : "—"}</div>
+									</div>
+								</div>
 							</div>
 
-							<div>
-								<div style={{ fontWeight: 600 }}>Observation</div>
-								<div>Linear model decision boundary remains linear; ReLU network learns non-linear boundary.</div>
+							<div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4">
+								<div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+									<SlidersHorizontal className="h-4 w-4 text-violet-300" />
+									<span>ReLU Model</span>
+								</div>
+								<div className="grid gap-3">
+									<div className="rounded-2xl bg-slate-950/80 p-3">
+										<div className="text-xs uppercase tracking-[0.2em] text-slate-500">Final Accuracy</div>
+										<div className="mt-1 text-2xl font-semibold text-white">{resultsSummary ? `${Math.round(resultsSummary.reluAccuracy * 100)}%` : "—"}</div>
+									</div>
+									<div className="rounded-2xl bg-slate-950/80 p-3">
+										<div className="text-xs uppercase tracking-[0.2em] text-slate-500">Final Loss</div>
+										<div className="mt-1 text-2xl font-semibold text-white">{resultsSummary ? resultsSummary.reluLoss.toFixed(3) : "—"}</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div className="mt-6 grid gap-4 sm:grid-cols-2">
+							<div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4">
+								<div className="text-xs uppercase tracking-[0.2em] text-slate-400">Observation</div>
+								<p className="mt-3 text-sm leading-6 text-slate-200">
+									{resultsSummary
+										? resultsSummary.explanation
+										: "Run training to compare how the linear and ReLU models perform on concentric circles."
+									}
+								</p>
 							</div>
 
-							<div>
-								<div style={{ fontWeight: 600 }}>Conclusion</div>
-								<div>Non-linear activation (ReLU) enables learning complex decision boundaries.</div>
+							<div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4">
+								<div className="text-xs uppercase tracking-[0.2em] text-slate-400">Conclusion</div>
+								<p className="mt-3 text-sm leading-6 text-slate-200">
+									{resultsSummary
+										? resultsSummary.conclusion
+										: "A dynamic conclusion will appear once training completes."
+									}
+								</p>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
+
+				{/* Footer */}
+				<div className="mt-12 border-t border-white/6 pt-6">
+					<div className="max-w-7xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4">
+						<div className="text-sm text-slate-300 font-medium">Interactive Deep Learning Visualization</div>
+						<div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+							<div className="text-xs text-slate-400 mr-3">Built with</div>
+							<div className="flex flex-wrap items-center gap-3">
+								<span className="text-sm font-semibold text-white">React 19</span>
+								<span className="text-sm font-semibold text-white">TypeScript</span>
+								<span className="text-sm font-semibold text-white">TensorFlow.js</span>
+								<span className="text-sm font-semibold text-white">TailwindCSS</span>
+							</div>
+						</div>
+					</div>
+					<div className="mt-4 text-xs text-slate-500 text-center">© {new Date().getFullYear()} Visual Proofs — Interactive Deep Learning</div>
+				</div>
 		</div>
-	);
-}
+		);
+		}
