@@ -29,7 +29,9 @@ function splitDataset(dataset: Dataset) {
   };
 }
 
-function buildGeneralizationModel(tf: any): LayersModel {
+type TfNamespace = typeof import("@tensorflow/tfjs");
+
+function buildGeneralizationModel(tf: TfNamespace): LayersModel {
   const model = tf.sequential();
   model.add(tf.layers.dense({ units: 128, inputShape: [2], activation: "relu" }));
   model.add(tf.layers.dense({ units: 128, activation: "relu" }));
@@ -69,6 +71,8 @@ export default function GeneralizationExperiment(): React.ReactElement {
 
   const modelRef = useRef<LayersModel | null>(null);
   const stopRef = useRef(false);
+  // tfjs is lazy-loaded (see ensureTfLoaded) so the ref is populated at runtime, not statically typed here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tfRef = useRef<any>(null);
 
   async function ensureTfLoaded() {
@@ -134,6 +138,11 @@ export default function GeneralizationExperiment(): React.ReactElement {
     model.compile({ optimizer: tf.train.adam(learningRate), loss: "binaryCrossentropy" });
     modelRef.current = model;
 
+    let lastTrainLoss = 0;
+    let lastTestLoss = 0;
+    let lastTrainAccuracy = 0;
+    let lastTestAccuracy = 0;
+
     try {
       for (let epoch = 0; epoch < epochs; epoch += 1) {
         if (stopRef.current) break;
@@ -156,6 +165,11 @@ export default function GeneralizationExperiment(): React.ReactElement {
         const trainAccuracy = await computeAccuracy(model, xsTrain, trainData.ys);
         const testAccuracy = await computeAccuracy(model, xsTest, testData.ys);
 
+        lastTrainLoss = trainLoss;
+        lastTestLoss = testLoss;
+        lastTrainAccuracy = trainAccuracy;
+        lastTestAccuracy = testAccuracy;
+
         setEpochCount(epoch + 1);
         setTrainLossHistory((historyArray) => [...historyArray, trainLoss]);
         setTestLossHistory((historyArray) => [...historyArray, testLoss]);
@@ -167,10 +181,10 @@ export default function GeneralizationExperiment(): React.ReactElement {
       }
 
       if (!stopRef.current) {
-        const finalTrainAccuracy = trainAccHistory.length > 0 ? trainAccHistory[trainAccHistory.length - 1] : await computeAccuracy(model, xsTrain, trainData.ys);
-        const finalTestAccuracy = testAccHistory.length > 0 ? testAccHistory[testAccHistory.length - 1] : await computeAccuracy(model, xsTest, testData.ys);
-        const finalTrainLoss = trainLossHistory.length > 0 ? trainLossHistory[trainLossHistory.length - 1] : 0;
-        const finalTestLoss = testLossHistory.length > 0 ? testLossHistory[testLossHistory.length - 1] : 0;
+        const finalTrainAccuracy = lastTrainAccuracy;
+        const finalTestAccuracy = lastTestAccuracy;
+        const finalTrainLoss = lastTrainLoss;
+        const finalTestLoss = lastTestLoss;
 
         const result: RunResult = {
           samples: datasetSize,

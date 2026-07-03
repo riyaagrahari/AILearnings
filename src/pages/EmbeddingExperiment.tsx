@@ -99,6 +99,8 @@ export default function EmbeddingExperiment(): React.ReactElement {
   const modelRef = useRef<LayersModel | null>(null);
   const tensorsRef = useRef<{ xs?: Tensor; ys?: Tensor } | null>(null);
   const stopRef = useRef(false);
+  // tfjs is lazy-loaded (see ensureTfLoaded) so the ref is populated at runtime, not statically typed here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tfRef = useRef<any>(null);
 
   async function ensureTfLoaded() {
@@ -165,6 +167,9 @@ export default function EmbeddingExperiment(): React.ReactElement {
   }
 
   useEffect(() => {
+    // Rebuild the model whenever the embedding dimension changes; resetExperiment
+    // intentionally resets several pieces of state together as one atomic transition.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     resetExperiment();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embeddingDim]);
@@ -230,7 +235,7 @@ export default function EmbeddingExperiment(): React.ReactElement {
     const tf = tfRef.current;
 
     const embeddingLayer = modelRef.current.layers[0];
-    const weights = (embeddingLayer as any).getWeights?.();
+    const weights = embeddingLayer.getWeights();
     if (!weights || weights.length === 0) return;
 
     const embeddings = weights[0] as Tensor;

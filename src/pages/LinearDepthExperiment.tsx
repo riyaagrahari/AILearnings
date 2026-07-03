@@ -11,7 +11,9 @@ type TrainingState = "idle" | "running" | "paused";
 const CANVAS_SIZE = 360;
 const GRID_RES = 180;
 
-function buildDeepLinearModel(tff: any, depth: number, units: number): LayersModel {
+type TfNamespace = typeof import("@tensorflow/tfjs");
+
+function buildDeepLinearModel(tff: TfNamespace, depth: number, units: number): LayersModel {
   const model = tff.sequential();
 
   // stack `depth` linear layers (no activations), followed by sigmoid output
@@ -24,13 +26,13 @@ function buildDeepLinearModel(tff: any, depth: number, units: number): LayersMod
   return model as LayersModel;
 }
 
-function buildSingleLinearModel(tff: any): LayersModel {
+function buildSingleLinearModel(tff: TfNamespace): LayersModel {
   const model = tff.sequential();
   model.add(tff.layers.dense({ units: 1, inputShape: [2], activation: "sigmoid" }));
   return model as LayersModel;
 }
 
-function buildDeepReLUModel(tff: any, depth: number, units: number): LayersModel {
+function buildDeepReLUModel(tff: TfNamespace, depth: number, units: number): LayersModel {
   const model = tff.sequential();
 
   for (let i = 0; i < depth; i++) {
@@ -195,6 +197,8 @@ export default function LinearDepthExperiment(): React.ReactElement {
   const stopRef = useRef(false);
   const pausedRef = useRef(false);
 
+  // tfjs is lazy-loaded (see ensureTfLoaded) so the ref is populated at runtime, not statically typed here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tfRef = useRef<any>(null);
 
   async function ensureTfLoaded() {
@@ -350,7 +354,6 @@ export default function LinearDepthExperiment(): React.ReactElement {
       if (tfRef.current && tfRef.current.nextFrame) await tfRef.current.nextFrame();
 
       while (pausedRef.current) {
-        // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 100));
         if (stopRef.current) break;
       }
@@ -422,6 +425,7 @@ export default function LinearDepthExperiment(): React.ReactElement {
     renderHeatmap(tB, gridRes, gridRes, arrB);
     renderHeatmap(tC, gridRes, gridRes, arrC);
 
+    const skipTicks = Math.max(1, 11 - animationSpeed);
     async function animateBlend(ctx: CanvasRenderingContext2D, src: HTMLCanvasElement) {
       const frames = 8;
       for (let i = 0; i <= frames; i++) {
@@ -432,7 +436,9 @@ export default function LinearDepthExperiment(): React.ReactElement {
         ctx.imageSmoothingEnabled = true;
         ctx.drawImage(src, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
         ctx.restore();
-        await new Promise((r) => requestAnimationFrame(r));
+        for (let tick = 0; tick < skipTicks; tick++) {
+          await new Promise((r) => requestAnimationFrame(r));
+        }
       }
     }
 
@@ -469,7 +475,7 @@ export default function LinearDepthExperiment(): React.ReactElement {
     setState("idle");
   }
 
-  function handleReset() {
+  async function handleReset() {
     handleStop();
     setEpochCount(0);
     setLossHistoryA([]);
@@ -479,8 +485,8 @@ export default function LinearDepthExperiment(): React.ReactElement {
     setLossHistoryC([]);
     setAccHistoryC([]);
     setTrainingComplete(false);
-    resetModels();
-    updateDecisionBoundaries();
+    await resetModels();
+    await updateDecisionBoundaries();
   }
 
   useEffect(() => {
@@ -513,7 +519,10 @@ export default function LinearDepthExperiment(): React.ReactElement {
   }, [canvasARef.current, canvasBRef.current, canvasCRef.current, dataset]);
 
   useEffect(() => {
+    // Derive effectiveMatrix from trainingComplete: clear it immediately when training
+    // isn't complete, then compute it asynchronously once it is.
     if (!trainingComplete) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEffectiveMatrix(null);
       return;
     }
@@ -528,11 +537,9 @@ export default function LinearDepthExperiment(): React.ReactElement {
           // gather kernel weights from modelB's layers (keep order)
           const kernels: Tensor[] = [];
           for (const layer of modelBRef.current!.layers) {
-            if (typeof (layer as any).getWeights === "function") {
-              const w = (layer as any).getWeights();
-              if (w && w.length > 0) {
-                kernels.push(w[0]);
-              }
+            const w = layer.getWeights();
+            if (w && w.length > 0) {
+              kernels.push(w[0]);
             }
           }
 
@@ -551,11 +558,10 @@ export default function LinearDepthExperiment(): React.ReactElement {
         combined.dispose();
 
         setEffectiveMatrix({ shape, values });
-      } catch (err) {
-        // ignore
+      } catch {
+        // ignore: tensors may already be disposed if a reset happened mid-computation
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainingComplete]);
 
   return (
@@ -905,7 +911,7 @@ export default function LinearDepthExperiment(): React.ReactElement {
               />
             </div>
 
-            <div className={`w-full rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-[0_24px_100px_-60px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all duration-700 ${true ? "opacity-100" : "opacity-40"}`}>
+            <div className={`w-full rounded-3xl border border-white/10 bg-slate-950/80 p-6 shadow-[0_24px_100px_-60px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all duration-700 ${trainingComplete ? "opacity-100" : "opacity-40"}`}>
               <div className="font-semibold text-white">Summary</div>
               <div className="mt-2 text-sm text-slate-300">
                 {trainingComplete ? (

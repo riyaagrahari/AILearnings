@@ -11,7 +11,9 @@ type TrainingState = "idle" | "running" | "paused";
 const CANVAS_SIZE = 360;
 const GRID_RES = 180;
 
-function buildLinearModel(tff: any): LayersModel {
+type TfNamespace = typeof import("@tensorflow/tfjs");
+
+function buildLinearModel(tff: TfNamespace): LayersModel {
 	const model = tff.sequential();
 
 	model.add(
@@ -21,7 +23,7 @@ function buildLinearModel(tff: any): LayersModel {
 	return model as LayersModel;
 }
 
-function buildReLUModel(tff: any, hiddenUnits: number): LayersModel {
+function buildReLUModel(tff: TfNamespace, hiddenUnits: number): LayersModel {
 	const model = tff.sequential();
 
 	model.add(tff.layers.dense({ units: hiddenUnits, inputShape: [2], activation: "relu" }));
@@ -205,6 +207,8 @@ export default function ReLUExperiment(): React.ReactElement {
 	const stopRef = useRef(false);
 	const pausedRef = useRef(false);
 
+	// tfjs is lazy-loaded (see ensureTfLoaded) so the ref is populated at runtime, not statically typed here.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const tfRef = useRef<any>(null);
 
 	async function ensureTfLoaded() {
@@ -350,10 +354,8 @@ export default function ReLUExperiment(): React.ReactElement {
 			if (tfRef.current && tfRef.current.nextFrame) await tfRef.current.nextFrame();
 
 			// pause handling (use ref to avoid stale closure)
-			// eslint-disable-next-line no-await-in-loop
 			while (pausedRef.current) {
 				// small sleep while paused
-				// eslint-disable-next-line no-await-in-loop
 				await new Promise((r) => setTimeout(r, 100));
 				if (stopRef.current) break;
 			}
@@ -415,7 +417,8 @@ export default function ReLUExperiment(): React.ReactElement {
 		renderHeatmap(tA, gridRes, gridRes, arrA);
 		renderHeatmap(tB, gridRes, gridRes, arrB);
 
-		// animate blend for both canvases
+		// animate blend for both canvases; higher animationSpeed = fewer rAF ticks skipped per step = faster blend
+		const skipTicks = Math.max(1, 11 - animationSpeed);
 		async function animateBlend(ctx: CanvasRenderingContext2D, src: HTMLCanvasElement) {
 			const frames = 8;
 			for (let i = 0; i <= frames; i++) {
@@ -426,8 +429,10 @@ export default function ReLUExperiment(): React.ReactElement {
 				ctx.imageSmoothingEnabled = true;
 				ctx.drawImage(src, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 				ctx.restore();
-				// yield to next frame
-				await new Promise((r) => requestAnimationFrame(r));
+				// yield to next frame(s); skipTicks controls perceived speed
+				for (let tick = 0; tick < skipTicks; tick++) {
+					await new Promise((r) => requestAnimationFrame(r));
+				}
 			}
 		};
 
@@ -462,7 +467,7 @@ export default function ReLUExperiment(): React.ReactElement {
 		setState("idle");
 	}
 
-	function handleReset() {
+	async function handleReset() {
 		handleStop();
 		setEpochCount(0);
 		setLossHistoryA([]);
@@ -470,8 +475,8 @@ export default function ReLUExperiment(): React.ReactElement {
 		setLossHistoryB([]);
 		setAccHistoryB([]);
 		setTrainingComplete(false);
-		resetModels();
-		updateDecisionBoundaries();
+		await resetModels();
+		await updateDecisionBoundaries();
 	}
 
 	useEffect(() => {
@@ -1017,25 +1022,8 @@ export default function ReLUExperiment(): React.ReactElement {
 							</div>
 						</div>
 					</div>
-				</div>
 			</div>
-
-				{/* Footer */}
-				<div className="mt-12 border-t border-white/6 pt-6">
-					<div className="max-w-7xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-4">
-						<div className="text-sm text-slate-300 font-medium">Interactive Deep Learning Visualization</div>
-						<div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-							<div className="text-xs text-slate-400 mr-3">Built with</div>
-							<div className="flex flex-wrap items-center gap-3">
-								<span className="text-sm font-semibold text-white">React 19</span>
-								<span className="text-sm font-semibold text-white">TypeScript</span>
-								<span className="text-sm font-semibold text-white">TensorFlow.js</span>
-								<span className="text-sm font-semibold text-white">TailwindCSS</span>
-							</div>
-						</div>
-					</div>
-					<div className="mt-4 text-xs text-slate-500 text-center">© {new Date().getFullYear()} Visual Proofs — Interactive Deep Learning</div>
-				</div>
+		</div>
 		</div>
 		);
 		}
