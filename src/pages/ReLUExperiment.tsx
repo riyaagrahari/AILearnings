@@ -142,8 +142,10 @@ export default function ReLUExperiment(): React.ReactElement {
 	const [state, setState] = useState<TrainingState>("idle");
 
 	const [epochCount, setEpochCount] = useState<number>(0);
-	const [lossHistory, setLossHistory] = useState<number[]>([]);
-	const [accHistory, setAccHistory] = useState<number[]>([]);
+	const [lossHistoryA, setLossHistoryA] = useState<number[]>([]);
+	const [accHistoryA, setAccHistoryA] = useState<number[]>([]);
+	const [lossHistoryB, setLossHistoryB] = useState<number[]>([]);
+	const [accHistoryB, setAccHistoryB] = useState<number[]>([]);
 
 	const canvasARef = useRef<HTMLCanvasElement | null>(null);
 	const canvasBRef = useRef<HTMLCanvasElement | null>(null);
@@ -227,8 +229,10 @@ export default function ReLUExperiment(): React.ReactElement {
 		const d = generateConcentricCircles(options);
 		setDataset(d);
 		setEpochCount(0);
-		setLossHistory([]);
-		setAccHistory([]);
+		setLossHistoryA([]);
+		setAccHistoryA([]);
+		setLossHistoryB([]);
+		setAccHistoryB([]);
 		pausedRef.current = false;
 		await resetModels();
 	}
@@ -239,32 +243,38 @@ export default function ReLUExperiment(): React.ReactElement {
 		setState("running");
 		stopRef.current = false;
 
-		const xs = tensorsRef.current.xs!;
-		const ys = tensorsRef.current.ys!;
+		const xs = tensorsRef.current!.xs!;
+		const ys = tensorsRef.current!.ys!;
 
 		for (let e = 0; e < epochs; e++) {
 			if (stopRef.current) break;
 
 			// single epoch train both models sequentially
-			const [, resB] = await Promise.all([
+			const [resA, resB] = await Promise.all([
 				modelARef.current!.fit(xs, ys, { epochs: 1, batchSize, shuffle: true }),
 				modelBRef.current!.fit(xs, ys, { epochs: 1, batchSize, shuffle: true }),
 			]);
 
 			// compute metrics from ReLU model (resB)
-			const loss = resB.history.loss ? (resB.history.loss as number[]).slice(-1)[0] : NaN;
-			const acc = resB.history.accuracy
-				? (resB.history.accuracy as number[]).slice(-1)[0]
-				: NaN;
+			const lossA = resA.history.loss ? (resA.history.loss as number[]).slice(-1)[0] : NaN;
+			const accA = resA.history.accuracy ? (resA.history.accuracy as number[]).slice(-1)[0] : NaN;
+			const lossB = resB.history.loss ? (resB.history.loss as number[]).slice(-1)[0] : NaN;
+			const accB = resB.history.accuracy ? (resB.history.accuracy as number[]).slice(-1)[0] : NaN;
 
 			setEpochCount((p) => p + 1);
-			setLossHistory((h) => [...h, Number(loss ?? NaN)]);
-			setAccHistory((h) => [...h, Number(acc ?? NaN)]);
+			setLossHistoryA((h) => [...h, Number(lossA ?? NaN)]);
+			setAccHistoryA((h) => [...h, Number(accA ?? NaN)]);
+			setLossHistoryB((h) => [...h, Number(lossB ?? NaN)]);
+			setAccHistoryB((h) => [...h, Number(accB ?? NaN)]);
 
 			// update decision boundary occasionally based on animation speed
-			if (e % Math.max(1, animationSpeed) === 0) {
+			// render decision boundaries every 2 epochs
+			if ((e + 1) % 2 === 0) {
 				await updateDecisionBoundaries();
 			}
+
+			// yield to the UI to keep React responsive
+			if (tfRef.current && tfRef.current.nextFrame) await tfRef.current.nextFrame();
 
 			// pause handling (use ref to avoid stale closure)
 			// eslint-disable-next-line no-await-in-loop
@@ -309,16 +319,47 @@ export default function ReLUExperiment(): React.ReactElement {
 
 		const [arrA, arrB] = await Promise.all([pa.data() as Promise<Float32Array>, pb.data() as Promise<Float32Array>]);
 
-		// draw on canvases
+		// draw on offscreen canvases and animate blend into visible canvases
 		const ca = canvasARef.current!;
 		const cb = canvasBRef.current!;
 
 		const ctxA = ca.getContext("2d")!;
 		const ctxB = cb.getContext("2d")!;
 
-		renderHeatmap(ctxA, CANVAS_SIZE, gridRes, arrA);
-		renderHeatmap(ctxB, CANVAS_SIZE, gridRes, arrB);
+		// prepare temporary canvases at grid resolution
+		const tmpA = document.createElement("canvas");
+		tmpA.width = gridRes;
+		tmpA.height = gridRes;
+		const tA = tmpA.getContext("2d")!;
 
+		const tmpB = document.createElement("canvas");
+		tmpB.width = gridRes;
+		tmpB.height = gridRes;
+		const tB = tmpB.getContext("2d")!;
+
+		// render heatmaps into temporary contexts (they internally scale)
+		renderHeatmap(tA, gridRes, gridRes, arrA);
+		renderHeatmap(tB, gridRes, gridRes, arrB);
+
+		// animate blend for both canvases
+		async function animateBlend(ctx: CanvasRenderingContext2D, src: HTMLCanvasElement) {
+			const frames = 8;
+			for (let i = 0; i <= frames; i++) {
+				const alpha = i / frames;
+				ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+				ctx.save();
+				ctx.globalAlpha = alpha;
+				ctx.imageSmoothingEnabled = true;
+				ctx.drawImage(src, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
+				ctx.restore();
+				// yield to next frame
+				await new Promise((r) => requestAnimationFrame(r));
+			}
+		};
+
+		await Promise.all([animateBlend(ctxA, tmpA), animateBlend(ctxB, tmpB)]);
+
+		// overlay axes and points after blend
 		drawAxes(ctxA, CANVAS_SIZE);
 		drawAxes(ctxB, CANVAS_SIZE);
 
@@ -349,8 +390,10 @@ export default function ReLUExperiment(): React.ReactElement {
 	function handleReset() {
 		handleStop();
 		setEpochCount(0);
-		setLossHistory([]);
-		setAccHistory([]);
+		setLossHistoryA([]);
+		setAccHistoryA([]);
+		setLossHistoryB([]);
+		setAccHistoryB([]);
 		resetModels();
 		updateDecisionBoundaries();
 	}
@@ -544,9 +587,9 @@ export default function ReLUExperiment(): React.ReactElement {
 					<div style={{ marginTop: 12 }}>
 						<strong>Epoch:</strong> {epochCount}
 						<br />
-						<strong>Latest Loss:</strong> {lossHistory.slice(-1)[0] ?? "-"}
+						<strong>Latest Loss:</strong> {lossHistoryB.slice(-1)[0] ?? "-"}
 						<br />
-						<strong>Latest Acc:</strong> {accHistory.slice(-1)[0] ?? "-"}
+						<strong>Latest Acc:</strong> {Math.round((accHistoryB.slice(-1)[0] ?? 0) * 100) + "%"}
 					</div>
 				</div>
 
@@ -554,11 +597,39 @@ export default function ReLUExperiment(): React.ReactElement {
 					<div style={{ display: "flex", gap: 8 }}>
 						<div style={{ background: "#071029", padding: 8 }}>
 							<div style={{ fontWeight: 600, marginBottom: 6 }}>Linear</div>
+							<div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
+									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Epoch</div>
+									<div style={{ fontWeight: 700 }}>{epochCount}</div>
+								</div>
+								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
+									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Loss</div>
+									<div style={{ fontWeight: 700 }}>{(lossHistoryA.slice(-1)[0] ?? "-")}</div>
+								</div>
+								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
+									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Accuracy</div>
+									<div style={{ fontWeight: 700 }}>{Math.round((accHistoryA.slice(-1)[0] ?? 0) * 100)}%</div>
+								</div>
+							</div>
 							<canvas ref={canvasARef} width={CANVAS_SIZE} height={CANVAS_SIZE} />
 						</div>
 
 						<div style={{ background: "#071029", padding: 8 }}>
 							<div style={{ fontWeight: 600, marginBottom: 6 }}>ReLU</div>
+							<div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
+									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Epoch</div>
+									<div style={{ fontWeight: 700 }}>{epochCount}</div>
+								</div>
+								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
+									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Loss</div>
+									<div style={{ fontWeight: 700 }}>{(lossHistoryB.slice(-1)[0] ?? "-")}</div>
+								</div>
+								<div style={{ background: "#011025", padding: 8, borderRadius: 6 }}>
+									<div style={{ fontSize: 12, color: "#9fb6d9" }}>Accuracy</div>
+									<div style={{ fontWeight: 700 }}>{Math.round((accHistoryB.slice(-1)[0] ?? 0) * 100)}%</div>
+								</div>
+							</div>
 							<canvas ref={canvasBRef} width={CANVAS_SIZE} height={CANVAS_SIZE} />
 						</div>
 					</div>
@@ -569,8 +640,18 @@ export default function ReLUExperiment(): React.ReactElement {
 							<Plot
 								data={[
 									{
-										x: lossHistory.map((_, i) => i),
-										y: lossHistory,
+										x: lossHistoryA.map((_, i) => i),
+										y: lossHistoryA,
+										name: "Linear",
+										type: "scatter",
+										mode: "lines+markers",
+										marker: { color: "#66b3ff" },
+										line: { color: "#66b3ff" },
+									},
+									{
+										x: lossHistoryB.map((_, i) => i),
+										y: lossHistoryB,
+										name: "ReLU",
 										type: "scatter",
 										mode: "lines+markers",
 										marker: { color: "#ff8a50" },
@@ -584,7 +665,7 @@ export default function ReLUExperiment(): React.ReactElement {
 									paper_bgcolor: "#041026",
 									plot_bgcolor: "#041026",
 									xaxis: { visible: false },
-									yaxis: { range: [0, Math.max(...lossHistory, 1)] },
+									yaxis: { range: [0, Math.max(...lossHistoryA, ...lossHistoryB, 1)] },
 								}}
 								config={{ displayModeBar: false, responsive: true }}
 								style={{ background: "#041026" }}
@@ -596,12 +677,22 @@ export default function ReLUExperiment(): React.ReactElement {
 							<Plot
 								data={[
 									{
-										x: accHistory.map((_, i) => i),
-										y: accHistory,
+										x: accHistoryA.map((_, i) => i),
+										y: accHistoryA,
+										name: "Linear",
 										type: "scatter",
 										mode: "lines+markers",
 										marker: { color: "#66b3ff" },
 										line: { color: "#66b3ff" },
+									},
+									{
+										x: accHistoryB.map((_, i) => i),
+										y: accHistoryB,
+										name: "ReLU",
+										type: "scatter",
+										mode: "lines+markers",
+										marker: { color: "#ff8a50" },
+										line: { color: "#ff8a50" },
 									},
 								]}
 								layout={{
