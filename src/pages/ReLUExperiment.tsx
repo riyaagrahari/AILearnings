@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { Layers, Play, Pause, StopCircle, RefreshCcw, Shuffle, Sparkles, Database, SlidersHorizontal } from "lucide-react";
 import type { Dataset, DatasetGeneratorOptions } from "../experiments/relu/dataset";
 import { generateConcentricCircles, datasetToTensors } from "../experiments/relu/dataset";
 import type { Tensor2D, Tensor, LayersModel } from "@tensorflow/tfjs";
@@ -428,169 +429,261 @@ export default function ReLUExperiment(): React.ReactElement {
 		<div style={{ padding: 20, color: "white", fontFamily: "Inter, Arial" }}>
 			<h2 style={{ fontSize: 24, marginBottom: 8 }}>Why ReLU Matters</h2>
 
-			<div style={{ display: "flex", gap: 16 }}>
-				<div style={{ width: 420 }}>
-					<div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Samples
+			<div className="flex flex-col gap-16 xl:flex-row">
+				<div className="flex flex-col gap-6 xl:w-96">
+				<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+					<div className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">
+						<Database className="h-4 w-4 text-cyan-300" />
+						<span>Dataset</span>
+					</div>
+					<div className="grid gap-4">
+						<div className="space-y-2">
+							<label htmlFor="samples" className="text-sm font-medium text-slate-100">
+								Samples
+							</label>
 							<input
+								id="samples"
 								type="number"
+								min={50}
+								step={10}
 								value={options.samples}
 								onChange={(e) => setOptions({ ...options, samples: Number(e.target.value) })}
-								style={{ width: 120 }}
+								className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
 							/>
-						</label>
+							<p className="text-xs text-slate-500">Number of points in the circle dataset.</p>
+						</div>
 
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Radius
-							<input
-								type="number"
-								step="0.1"
-								value={options.radius}
-								onChange={(e) => setOptions({ ...options, radius: Number(e.target.value) })}
-								style={{ width: 120 }}
-							/>
-						</label>
+						<div className="space-y-2">
+							<label htmlFor="noise" className="text-sm font-medium text-slate-100">
+								Noise
+							</label>
+							<div className="flex items-center gap-3">
+								<input
+									id="noise"
+									type="range"
+									min={0}
+									max={0.3}
+									step={0.01}
+									value={options.noise}
+									onChange={(e) => setOptions({ ...options, noise: Number(e.target.value) })}
+									className="w-full accent-cyan-400"
+								/>
+								<span className="text-sm text-slate-400">{options.noise.toFixed(2)}</span>
+							</div>
+							<p className="text-xs text-slate-500">Adds radial noise to the points.</p>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div className="space-y-2">
+								<label htmlFor="radius" className="text-sm font-medium text-slate-100">
+									Radius
+								</label>
+								<input
+									id="radius"
+									type="number"
+									step={0.1}
+									value={options.radius}
+									onChange={(e) => setOptions({ ...options, radius: Number(e.target.value) })}
+									className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+								/>
+								<p className="text-xs text-slate-500">Circle radius for class separation.</p>
+							</div>
+
+							<div className="space-y-2">
+								<label htmlFor="seed" className="text-sm font-medium text-slate-100">
+									Seed
+								</label>
+								<input
+									id="seed"
+									type="number"
+									value={options.seed}
+									onChange={(e) => setOptions({ ...options, seed: Number(e.target.value) })}
+									className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+								/>
+								<p className="text-xs text-slate-500">Control reproducible dataset generation.</p>
+							</div>
+						</div>
 					</div>
+				</div>
 
-					<div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Noise
-							<input
-								type="number"
-								step="0.01"
-								value={options.noise}
-								onChange={(e) => setOptions({ ...options, noise: Number(e.target.value) })}
-								style={{ width: 120 }}
-							/>
-						</label>
-
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Seed
-							<input
-								type="number"
-								value={options.seed}
-								onChange={(e) => setOptions({ ...options, seed: Number(e.target.value) })}
-								style={{ width: 120 }}
-							/>
-						</label>
+				<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+					<div className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">
+						<Layers className="h-4 w-4 text-orange-300" />
+						<span>Model</span>
 					</div>
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<label htmlFor="learningRate" className="text-sm font-medium text-slate-100">
+								Learning Rate
+							</label>
+							<div className="flex items-center gap-3">
+								<input
+									id="learningRate"
+									type="range"
+									min={0.0005}
+									max={0.1}
+									step={0.0005}
+									value={learningRate}
+									onChange={(e) => setLearningRate(Number(e.target.value))}
+									className="w-full accent-orange-400"
+								/>
+								<span className="text-sm text-slate-400">{learningRate.toFixed(4)}</span>
+							</div>
+							<p className="text-xs text-slate-500">Step size for optimizer updates.</p>
+						</div>
 
-					<div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-						<button onClick={handleGenerate} style={{ padding: "8px 12px" }}>
-							Generate
+						<div className="space-y-2">
+							<label htmlFor="hiddenUnits" className="text-sm font-medium text-slate-100">
+								Hidden Units
+							</label>
+							<div className="flex items-center gap-3">
+								<input
+									id="hiddenUnits"
+									type="range"
+									min={4}
+									max={32}
+									step={1}
+									value={hiddenUnits}
+									onChange={(e) => setHiddenUnits(Number(e.target.value))}
+									className="w-full accent-orange-400"
+								/>
+								<span className="text-sm text-slate-400">{hiddenUnits}</span>
+							</div>
+							<p className="text-xs text-slate-500">Controls model complexity.</p>
+						</div>
+
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div className="space-y-2">
+								<label htmlFor="batchSize" className="text-sm font-medium text-slate-100">
+									Batch Size
+								</label>
+								<input
+									id="batchSize"
+									type="number"
+									value={batchSize}
+									onChange={(e) => setBatchSize(Number(e.target.value))}
+									className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-slate-100 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20"
+								/>
+								<p className="text-xs text-slate-500">Examples processed per training step.</p>
+							</div>
+
+							<div className="space-y-2">
+								<label htmlFor="epochs" className="text-sm font-medium text-slate-100">
+									Epochs
+								</label>
+								<input
+									id="epochs"
+									type="number"
+									value={epochs}
+									onChange={(e) => setEpochs(Number(e.target.value))}
+									className="w-full rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-slate-100 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20"
+								/>
+								<p className="text-xs text-slate-500">Total passes over the dataset.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+					<div className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">
+						<SlidersHorizontal className="h-4 w-4 text-violet-300" />
+						<span>Animation</span>
+					</div>
+					<div className="space-y-3">
+						<label htmlFor="animationSpeed" className="text-sm font-medium text-slate-100">
+							Animation Speed
+						</label>
+						<div className="flex items-center gap-3">
+							<input
+								id="animationSpeed"
+								type="range"
+								min={1}
+								max={10}
+								step={1}
+								value={animationSpeed}
+								onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+								className="w-full accent-violet-400"
+							/>
+							<span className="text-sm text-slate-400">{animationSpeed}</span>
+						</div>
+						<p className="text-xs text-slate-500">Controls how quickly the heatmap updates.</p>
+					</div>
+				</div>
+
+				<div className="rounded-3xl border border-white/10 bg-slate-950/80 p-5 shadow-[0_20px_80px_-50px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+					<div className="mb-4 flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">
+						<Sparkles className="h-4 w-4 text-emerald-300" />
+						<span>Actions</span>
+					</div>
+					<div className="grid gap-3">
+						<button
+							onClick={handleGenerate}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:-translate-y-0.5 hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/50"
+						>
+							<RefreshCcw className="h-4 w-4" />
+							Generate Dataset
 						</button>
 
 						<button
 							onClick={() => {
-								setOptions({ ...options, seed: options.seed + 1 });
-								setDataset(generateConcentricCircles({ ...options, seed: options.seed + 1 }));
-							}}
-							style={{ padding: "8px 12px" }}
+							setOptions({ ...options, seed: options.seed + 1 });
+							setDataset(generateConcentricCircles({ ...options, seed: options.seed + 1 }));
+						}}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
 						>
+							<Shuffle className="h-4 w-4" />
 							Shuffle
 						</button>
 
-						<button onClick={handleReset} style={{ padding: "8px 12px" }}>
+						<button
+							onClick={handleReset}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+						>
+							<StopCircle className="h-4 w-4" />
 							Reset
 						</button>
 					</div>
 
-					<div style={{ marginBottom: 8 }}>
-						<label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-							Learning Rate
-							<input
-								type="range"
-								min="0.0001"
-								max="0.1"
-								step="0.0001"
-								value={learningRate}
-								onChange={(e) => setLearningRate(Number(e.target.value))}
-								style={{ flex: 1 }}
-							/>
-							<span style={{ width: 60 }}>{learningRate.toFixed(4)}</span>
-						</label>
-					</div>
-
-					<div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Epochs
-							<input
-								type="number"
-								value={epochs}
-								onChange={(e) => setEpochs(Number(e.target.value))}
-								style={{ width: 120 }}
-							/>
-						</label>
-
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Batch Size
-							<input
-								type="number"
-								value={batchSize}
-								onChange={(e) => setBatchSize(Number(e.target.value))}
-								style={{ width: 120 }}
-							/>
-						</label>
-					</div>
-
-					<div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Hidden Units
-							<input
-								type="number"
-								value={hiddenUnits}
-								onChange={(e) => setHiddenUnits(Number(e.target.value))}
-								style={{ width: 120 }}
-							/>
-						</label>
-
-						<label style={{ display: "flex", flexDirection: "column" }}>
-							Animation Speed
-							<input
-								type="range"
-								min="1"
-								max="10"
-								value={animationSpeed}
-								onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-								style={{ width: 120 }}
-							/>
-						</label>
-					</div>
-
-					<div style={{ display: "flex", gap: 8 }}>
+					<div className="mt-4 grid gap-3 sm:grid-cols-2">
 						<button
 							onClick={() => {
-								pausedRef.current = false;
-								setState("running");
-								stopRef.current = false;
-								trainLoop();
-							}}
-							style={{ padding: "8px 12px" }}
+							pausedRef.current = false;
+							setState("running");
+							stopRef.current = false;
+							trainLoop();
+						}}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
 						>
+							<Play className="h-4 w-4" />
 							Train
 						</button>
 
-						<button onClick={handlePause} style={{ padding: "8px 12px" }}>
+						<button
+							onClick={handlePause}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+						>
+							<Pause className="h-4 w-4" />
 							Pause
 						</button>
 
-						<button onClick={handleResume} style={{ padding: "8px 12px" }}>
+						<button
+							onClick={handleResume}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+						>
+							<Play className="h-4 w-4 rotate-180" />
 							Resume
 						</button>
 
-						<button onClick={handleStop} style={{ padding: "8px 12px" }}>
+						<button
+							onClick={handleStop}
+							className="inline-flex items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-rose-500/20 transition hover:-translate-y-0.5 hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/50"
+						>
+							<StopCircle className="h-4 w-4" />
 							Stop
 						</button>
 					</div>
+				</div>
 
-					<div style={{ marginTop: 12 }}>
-						<strong>Epoch:</strong> {epochCount}
-						<br />
-						<strong>Latest Loss:</strong> {lossHistoryB.slice(-1)[0] ?? "-"}
-						<br />
-						<strong>Latest Acc:</strong> {Math.round((accHistoryB.slice(-1)[0] ?? 0) * 100) + "%"}
-					</div>
 				</div>
 
 				<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
