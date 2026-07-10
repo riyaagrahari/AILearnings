@@ -1,0 +1,7 @@
+pytest>=8.0
+
+# API (backend/api/) -- everything the tokenizer itself needs (bpe/) is
+# pure standard library by design; these are only for serving it over HTTP.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+httpx>=0.27

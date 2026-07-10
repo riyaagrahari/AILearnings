@@ -1,0 +1,19 @@
+# Generated training/evaluation artifacts (reproducible from data/ + scripts/)
+backend/artifacts/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# User-provided corpus data is real text, not code -- keep folder
+# structure (.gitkeep) but never commit actual corpus files by accident.
+data/raw/*/*.txt
+data/eval/*/*.txt
+
+# OS
+.DS_Store
+
+# build cache / local corpus backup
+*.tsbuildinfo
+data/_corpus_backup/

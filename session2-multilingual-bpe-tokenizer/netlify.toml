@@ -1,0 +1,21 @@
+# Deploys ONLY the static frontend (frontend/) -- the FastAPI backend
+# (backend/api/) is a separate, stateful Python process and is not (and
+# cannot straightforwardly be) hosted by Netlify itself. Deploy the
+# backend elsewhere (Render/Railway/Fly.io/a VM/etc.) and point this site
+# at it via the VITE_API_BASE_URL environment variable. See README.md
+# "Deploying" for the full explanation and step-by-step instructions.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Single-page app fallback (harmless today with no client-side routes;
+# keeps working if routes are added later).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
