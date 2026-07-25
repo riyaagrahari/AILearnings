@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "session": 4,
+    "title": "India-First Multilingual Corpus Cleaning",
+    "dataset": "wikimedia/wikipedia (20231101 dumps)",
+    "dataset_url": "https://huggingface.co/datasets/wikimedia/wikipedia",
+    "license": "CC BY-SA 4.0",
+    "languages": [
+      {
+        "code": "hi",
+        "name": "Hindi"
+      },
+      {
+        "code": "te",
+        "name": "Telugu"
+      },
+      {
+        "code": "mr",
+        "name": "Marathi"
+      }
+    ],
+    "char_budget_per_language": 20000000,
+    "generated_at": "2026-07-24T08:16:24Z",
+    "runtime_seconds": 70.0
+  },
+  "strategy_count": {
+    "total_stages": 8,
+    "active_cleanups": 6
+  },
+  "totals": {
+    "raw_documents": 30208,
+    "raw_characters": 62141238,
+    "final_documents": 7580,
+    "final_characters": 43401493,
+    "documents_removed": 22628,
+    "document_retention_pct": 25.09,
+    "character_retention_pct": 69.84
+  },
+  "per_language": {
+    "before": {
+      "hi": 5120,
+      "te": 6656,
+      "mr": 18432
+    },
+    "after": {
+      "hi": 3790,
+      "te": 1895,
+      "mr": 1895
+    },
+    "names": {
+      "hi": "Hindi",
+      "te": "Telugu",
+      "mr": "Marathi"
+    }
+  },
+  "stages": [
+    {
+      "docs_in": 30208,
+      "docs_out": 30207,
+      "removed": 1,
+      "removed_reasons": {
+        "empty_document": 1
+      },
+      "chars_out": 62141237,
+      "per_language_docs": {
+        "hi": 5120,
+        "te": 6656,
+        "mr": 18431
+      },
+      "provenance": "wikimedia/wikipedia",
+      "license": "CC BY-SA 4.0",
+      "id": "raw",
+      "title": "Raw Documents",
+      "short": "Ingest",
+      "is_active_cleanup": false,
+      "seconds": 0.21
+    },
+    {
+      "docs_in": 30207,
+      "docs_out": 29967,
+      "removed": 240,
+      "removed_reasons": {
+        "wrong_dominant_script": 240
+      },
+      "review_pool": {
+        "low_confidence": 98,
+        "code_switch": 753,
+        "hi_mr_mismatch_flagged": 25
+      },
+      "examples_removed": [
+        {
+          "title": "बीसवीं शताब्दी",
+          "src_lang": "hi",
+          "detected": "latin",
+          "confidence": 0.52
+        },
+        {
+          "title": "बीरबल साहनी",
+          "src_lang": "hi",
+          "detected": "latin",
+          "confidence": 0.71
+        },
+        {
+          "title": "तेहरान",
+          "src_lang": "hi",
+          "detected": "latin",
+          "confidence": 0.57
+        },
+        {
+          "title": "पोप जॉन पॉल",
+          "src_lang": "hi",
+          "detected": "latin",
+          "confidence": 0.53
+        },
+        {
+          "title": "वियतनाम",
+          "src_lang": "hi",
+          "detected": "latin",
+          "confidence": 0.64
+        }
+      ],
+      "id": "langid",
+      "title": "Language Identification",
+      "short": "Detect",
+      "is_active_cleanup": true,
+      "seconds": 11.12
+    },
+    {
+      "docs_in": 29967,
+      "docs_out": 29967,
+      "removed": 0,
+      "chars_in": 61606597,
+      "chars_out": 61412898,
+      "chars_normalized_away": 193699,
+      "counters": {
+        "nfc_changed": 1,
+        "quotes": 15597,
+        "fullwidth_digits": 0,
+        "whitespace_chars": 193700,
+        "zwj_zwnj_preserved": 34859
+      },
+      "example": {
+        "before": "यह सिन्धु शब्द ईरानी में जाकर ‘हिन्दू’, हिन्दी और फिर ‘हिन्द",
+        "after": "यह सिन्धु शब्द ईरानी में जाकर 'हिन्दू', हिन्दी और फिर 'हिन्द"
+      },
+      "id": "normalize",
+      "title": "Unicode Normalization",
+      "short": "Normalize",
+      "is_active_cleanup": true,
+      "seconds": 9.28
+    },
+    {
+      "docs_in": 29967,
+      "docs_out": 28632,
+      "removed": 1335,
+      "removed_reasons": {
+        "exact_duplicate": 980,
+        "near_duplicate": 355
+      },
+      "method": "exact SHA1 + MinHash(k=64) / LSH (16x4) @ Jaccard>=0.8",
+      "examples_removed": [
+        {
+          "dropped": "दार्जीलिंग जिला",
+          "kept_as": "उत्तर दिनाजपुर जिला",
+          "jaccard_est": 0.81
+        },
+        {
+          "dropped": "पश्चिम सिक्किम जिला",
+          "kept_as": "पूर्व सिक्किम जिला",
+          "jaccard_est": 0.88
+        },
+        {
+          "dropped": "कामरूप जिला",
+          "kept_as": "नलबाड़ी जिला",
+          "jaccard_est": 0.94
+        },
+        {
+          "dropped": "अयोध्याकाण्ड",
+          "kept_as": "किष्किन्धाकाण्ड",
+          "jaccard_est": 0.86
+        },
+        {
+          "dropped": "मुग्ध",
+          "kept_as": "कूल",
+          "jaccard_est": 0.88
+        }
+      ],
+      "id": "dedup",
+      "title": "Deduplication",
+      "short": "Dedup",
+      "is_active_cleanup": true,
+      "seconds": 12.81
+    },
+    {
+      "docs_in": 28632,
+      "docs_out": 16870,
+      "removed": 11762,
+      "removed_reasons": {
+        "too_short": 11637,
+        "high_symbol_ratio": 42,
+        "low_alpha_ratio": 39,
+        "repetitive_lines": 44
+      },
+      "examples_removed": [
+        {
+          "title": "भक्त कवियों की सूची",
+          "reason": "too_short",
+          "words": 40,
+          "alpha_ratio": 0.797
+        },
+        {
+          "title": "भक्त",
+          "reason": "too_short",
+          "words": 43,
+          "alpha_ratio": 0.787
+        },
+        {
+          "title": "दस सर्वकालीन सर्वश्रेष्ठ चलचित्र",
+          "reason": "too_short",
+          "words": 31,
+          "alpha_ratio": 0.765
+        },
+        {
+          "title": "उत्तर दिशा",
+          "reason": "too_short",
+          "words": 20,
+          "alpha_ratio": 0.802
+        },
+        {
+          "title": "सार्क",
+          "reason": "too_short",
+          "words": 27,
+          "alpha_ratio": 0.766
+        },
+        {
+          "title": "वायरस",
+          "reason": "too_short",
+          "words": 8,
+          "alpha_ratio": 0.696
+        }
+      ],
+      "score_deciles": [
+        0,
+        0,
+        0,
+        1,
+        82,
+        2967,
+        2713,
+        1838,
+        1353,
+        7916
+      ],
+      "thresholds": {
+        "min_words": 50,
+        "alpha_floor": 0.6,
+        "symbol_ceil": 0.1,
+        "dup_line_ceil": 0.3
+      },
+      "id": "quality",
+      "title": "Quality Scoring",
+      "short": "Score",
+      "is_active_cleanup": true,
+      "seconds": 13.13
+    },
+    {
+      "docs_in": 16870,
+      "docs_out": 16868,
+      "removed": 2,
+      "removed_reasons": {
+        "toxicity_over_threshold": 2
+      },
+      "pii_redactions": {
+        "phone_in": 22,
+        "aadhaar": 9,
+        "ipv4": 25,
+        "credit_card": 10,
+        "email": 8
+      },
+      "docs_with_pii_redacted": 55,
+      "id": "safety",
+      "title": "Safety & Toxicity Filtering",
+      "short": "Filter",
+      "is_active_cleanup": true,
+      "seconds": 18.55
+    },
+    {
+      "docs_in": 16868,
+      "docs_out": 16868,
+      "removed": 0,
+      "secret_redactions": {},
+      "docs_with_secret_redacted": 0,
+      "source_license": "CC-BY-SA-4.0",
+      "license_allow_listed": true,
+      "note": "Repo-level & static-analysis code gates are N/A for a prose corpus; secret-scanning and SPDX allow-listing still run.",
+      "id": "code",
+      "title": "Code-Repository Filtering",
+      "short": "Code gate",
+      "is_active_cleanup": true,
+      "seconds": 1.6
+    },
+    {
+      "docs_in": 16868,
+      "docs_out": 7580,
+      "removed": 9288,
+      "removed_reasons": {
+        "rebalance_subsample": 9288
+      },
+      "target_mix": {
+        "hi": 0.5,
+        "mr": 0.25,
+        "te": 0.25
+      },
+      "per_language_final_docs": {
+        "hi": 3790,
+        "mr": 1895,
+        "te": 1895
+      },
+      "final_words": 6882261,
+      "final_chars": 43409072,
+      "estimated_tokens": 10852268,
+      "snapshot_sha256_16": "d5918e8419d04eb1",
+      "id": "corpus",
+      "title": "Training Corpus",
+      "short": "Ship",
+      "is_active_cleanup": false,
+      "seconds": 2.6
+    }
+  ]
+}
