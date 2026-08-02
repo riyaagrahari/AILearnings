@@ -284,13 +284,11 @@ V5 employs a **4-Stage Progressive Curriculum** designed to build foundational r
 
 ```mermaid
 graph TD
-    ST1[STAGE 1: Base Knowledge & Grammar Acquisition<br/>2.0 Trillion Tokens | Context: 4,096] --> ST2
-    ST2[STAGE 2: Structured Logic & Multilingual Scaling<br/>1.2 Trillion Tokens | Context: 8,192] --> ST3
-    ST3[STAGE 3: Complex Multi-Step Reasoning & Synthetic CoT<br/>0.8 Trillion Tokens | Context: 16,384] --> ST4a
-    ST4a[STAGE 4a: Context Extension Scaling<br/>0.15 Trillion Tokens | Context: 128,000 via YaRN] --> ST4b
-    ST4b[STAGE 4b: Clean Anneal Reserve LR Decay<br/>0.35 Trillion Tokens | Pristine 15% Reserve]
-
-```
+    ST1["STAGE 1: Base Knowledge & Grammar Acquisition<br/>2.0 Trillion Tokens - Context: 4,096"] --> ST2
+    ST2["STAGE 2: Structured Logic & Multilingual Scaling<br/>1.2 Trillion Tokens - Context: 8,192"] --> ST3
+    ST3["STAGE 3: Complex Multi-Step Reasoning & Synthetic CoT<br/>0.8 Trillion Tokens - Context: 16,384"] --> ST4a
+    ST4a["STAGE 4a: Context Extension Scaling<br/>0.15 Trillion Tokens - Context: 128,000 via YaRN"] --> ST4b
+    ST4b["STAGE 4b: Clean Anneal Reserve LR Decay<br/>0.35 Trillion Tokens - Pristine 15% Reserve"]
 
 ### 8.1 Multi-Stage Curriculum Allocation Breakdown
 
