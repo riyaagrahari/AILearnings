@@ -105,28 +105,16 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph TARGET USERS
-        U1[Software Engineers<br/>Agentic Coding]
-        U2[Govt / Enterprise<br/>Indic Translation]
-        U3[Researchers<br/>Local Reasoning]
-    end
+    ST1["Stage 1: Base Knowledge & Grammar Acquisition<br/>Tokens: 2.0 Trillion<br/>Context: 4,096"]
+    ST2["Stage 2: Structured Logic & Multilingual Scaling<br/>Tokens: 1.2 Trillion<br/>Context: 8,192"]
+    ST3["Stage 3: Complex Multi-Step Reasoning & Synthetic CoT<br/>Tokens: 0.8 Trillion<br/>Context: 16,384"]
+    ST4a["Stage 4a: Context Extension Scaling<br/>Tokens: 0.15 Trillion<br/>Context: 128,000 (YaRN)"]
+    ST4b["Stage 4b: Clean Anneal Reserve & LR Decay<br/>Tokens: 0.35 Trillion<br/>Pristine Reserve: 15%"]
 
-    U1 --> CORE
-    U2 --> CORE
-    U3 --> CORE
-
-    CORE[V5 FOUNDATION MODEL CORE<br/>14.2B Parameters]
-
-    C1[Constraint: 5.2k H100] --> CORE
-    C2[Constraint: Execution Check] --> CORE
-    C3[Constraint: Native Indic 22] --> CORE
-
-    subgraph NON-GOALS
-        C1
-        C2
-        C3
-    end
-
+    ST1 --> ST2
+    ST2 --> ST3
+    ST3 --> ST4a
+    ST4a --> ST4b
 ```
 
 ### 3.1 Vision, Mission, and Core Objectives
