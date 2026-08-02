@@ -148,13 +148,14 @@ graph TD
 
 We evaluate three distinct pretraining mixture candidates. Allocation percentages are defined as operational target ranges rather than arbitrary static numbers.
 
-```mermaid
-graph LR
-    A[Candidate A: English/Code Heavy] --> A_Out[Eng: 50% | Code: 30% | Indic: 10% | Math: 10%]
-    B[Candidate B: Indic Heavy] --> B_Out[Eng: 30% | Code: 15% | Indic: 45% | Math: 10%]
-    C[Candidate C: V5 Target Mixture] --> C_Out[Eng: 35.5% | Code: 22.0% | Indic: 22.5% | Math: 10.0% | Agentic/Synth: 10.0%]
+| Capability | Candidate A | Candidate B | Candidate C (Selected) |
+|------------|------------:|------------:|------------------------:|
+| English / General | 50% | 30% | 35.5% |
+| Coding | 30% | 15% | 22.0% |
+| Indic | 10% | 45% | 22.5% |
+| Mathematics | 10% | 10% | 10.0% |
+| Agentic / Synthetic | — | — | 10.0% |
 
-```
 
 ### 4.1 Candidate Mixture Target Ranges
 
