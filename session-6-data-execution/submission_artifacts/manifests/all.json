@@ -1,0 +1,96 @@
+[
+  {
+    "content_hash": "6af1ec541934197a8414f97448906e52fd247032cb6c0fc8b9c63a52e439fbb9",
+    "document_count": 3,
+    "document_ids": [
+      "general-000",
+      "general-001",
+      "general-002"
+    ],
+    "schema_version": 1,
+    "shard_id": "train-000",
+    "split": "train",
+    "token_count": 167,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  },
+  {
+    "content_hash": "b32d0053c939adf9add40a4523225cf4ace7d728aab2ff935e3f0a38523e8f4c",
+    "document_count": 3,
+    "document_ids": [
+      "coding-000",
+      "coding-001",
+      "coding-002"
+    ],
+    "schema_version": 1,
+    "shard_id": "train-001",
+    "split": "train",
+    "token_count": 119,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  },
+  {
+    "content_hash": "93d221ac5270717f66cd9a1bbf32232f4670c2b3d11eebcb3c22d942ecb8f38e",
+    "document_count": 3,
+    "document_ids": [
+      "reasoning-000",
+      "reasoning-001",
+      "agentic-000"
+    ],
+    "schema_version": 1,
+    "shard_id": "train-002",
+    "split": "train",
+    "token_count": 161,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  },
+  {
+    "content_hash": "33d42e6f54c3231241378a0e418b8c45dced1b45bfca02c4628b4049181f0018",
+    "document_count": 3,
+    "document_ids": [
+      "agentic-001",
+      "indic-000",
+      "indic-001"
+    ],
+    "schema_version": 1,
+    "shard_id": "train-003",
+    "split": "train",
+    "token_count": 283,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  },
+  {
+    "content_hash": "0b006619489bf52fd20053767b0dfe154e26ebe6ec9927e5a335abd46fcc1d18",
+    "document_count": 3,
+    "document_ids": [
+      "math-000",
+      "math-001",
+      "science-000"
+    ],
+    "schema_version": 1,
+    "shard_id": "train-004",
+    "split": "train",
+    "token_count": 168,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  },
+  {
+    "content_hash": "5799fa4a6080842f70f98e6ee87322121dedd392b0981c2815fa131928fe176f",
+    "document_count": 1,
+    "document_ids": [
+      "science-001"
+    ],
+    "schema_version": 1,
+    "shard_id": "train-005",
+    "split": "train",
+    "token_count": 74,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  },
+  {
+    "content_hash": "e9373ef894fe8153766a80d06513ff8b6c328e5e6353041b1cb60280621d8757",
+    "document_count": 1,
+    "document_ids": [
+      "eval-000"
+    ],
+    "schema_version": 1,
+    "shard_id": "eval-000",
+    "split": "eval",
+    "token_count": 57,
+    "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "content_hash": "e9373ef894fe8153766a80d06513ff8b6c328e5e6353041b1cb60280621d8757",
+  "document_count": 1,
+  "document_ids": [
+    "eval-000"
+  ],
+  "schema_version": 1,
+  "shard_id": "eval-000",
+  "split": "eval",
+  "token_count": 57,
+  "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+}

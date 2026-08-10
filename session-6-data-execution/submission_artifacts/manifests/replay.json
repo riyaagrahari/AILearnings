@@ -1,0 +1,116 @@
+{
+  "match": true,
+  "original": [
+    {
+      "batch_hash": "9cb5bd07cc033247d335eadf0cbe120333a9f4bf9e242ef5166b5f343daa0dea",
+      "batch_id": "batch-0001",
+      "spans": [
+        {
+          "lane": "general",
+          "sample_id": "general-002",
+          "token_end": 16,
+          "token_start": 0
+        },
+        {
+          "lane": "coding",
+          "sample_id": "coding-000",
+          "token_end": 16,
+          "token_start": 0
+        }
+      ]
+    },
+    {
+      "batch_hash": "cf7a078046f70e5ee4a4761d710bd009893aa5d72b3ffd7057e941cc79eeed9e",
+      "batch_id": "batch-0002",
+      "spans": [
+        {
+          "lane": "coding",
+          "sample_id": "coding-001",
+          "token_end": 16,
+          "token_start": 0
+        },
+        {
+          "lane": "coding",
+          "sample_id": "coding-002",
+          "token_end": 16,
+          "token_start": 0
+        }
+      ]
+    },
+    {
+      "batch_hash": "1a10cb0d4ce5634bd22c6646398e43cad0d70055ed18ddb3c56d08cb51dedafe",
+      "batch_id": "batch-0003",
+      "spans": [
+        {
+          "lane": "reasoning",
+          "sample_id": "reasoning-000",
+          "token_end": 16,
+          "token_start": 0
+        },
+        {
+          "lane": "reasoning",
+          "sample_id": "reasoning-001",
+          "token_end": 16,
+          "token_start": 0
+        }
+      ]
+    }
+  ],
+  "replayed": [
+    {
+      "batch_hash": "9cb5bd07cc033247d335eadf0cbe120333a9f4bf9e242ef5166b5f343daa0dea",
+      "batch_id": "batch-0001",
+      "spans": [
+        {
+          "lane": "general",
+          "sample_id": "general-002",
+          "token_end": 16,
+          "token_start": 0
+        },
+        {
+          "lane": "coding",
+          "sample_id": "coding-000",
+          "token_end": 16,
+          "token_start": 0
+        }
+      ]
+    },
+    {
+      "batch_hash": "cf7a078046f70e5ee4a4761d710bd009893aa5d72b3ffd7057e941cc79eeed9e",
+      "batch_id": "batch-0002",
+      "spans": [
+        {
+          "lane": "coding",
+          "sample_id": "coding-001",
+          "token_end": 16,
+          "token_start": 0
+        },
+        {
+          "lane": "coding",
+          "sample_id": "coding-002",
+          "token_end": 16,
+          "token_start": 0
+        }
+      ]
+    },
+    {
+      "batch_hash": "1a10cb0d4ce5634bd22c6646398e43cad0d70055ed18ddb3c56d08cb51dedafe",
+      "batch_id": "batch-0003",
+      "spans": [
+        {
+          "lane": "reasoning",
+          "sample_id": "reasoning-000",
+          "token_end": 16,
+          "token_start": 0
+        },
+        {
+          "lane": "reasoning",
+          "sample_id": "reasoning-001",
+          "token_end": 16,
+          "token_start": 0
+        }
+      ]
+    }
+  ],
+  "stream_hash": "c56c1884f85c7a90954f325c4eec7e72e2ad18777d27edb3876cf01f292c6ee5"
+}

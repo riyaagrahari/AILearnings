@@ -1,0 +1,14 @@
+{
+  "content_hash": "93d221ac5270717f66cd9a1bbf32232f4670c2b3d11eebcb3c22d942ecb8f38e",
+  "document_count": 3,
+  "document_ids": [
+    "reasoning-000",
+    "reasoning-001",
+    "agentic-000"
+  ],
+  "schema_version": 1,
+  "shard_id": "train-002",
+  "split": "train",
+  "token_count": 161,
+  "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+}

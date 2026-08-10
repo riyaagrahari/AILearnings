@@ -1,0 +1,146 @@
+[
+  {
+    "batch_hash": "48a20dd2b6f05d2cd181a27b007eea20afa7d1e81fb508539e3a801cbde636f0",
+    "batch_id": "batch-0000",
+    "spans": [
+      {
+        "lane": "general",
+        "sample_id": "general-000",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "general",
+        "sample_id": "general-001",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "9cb5bd07cc033247d335eadf0cbe120333a9f4bf9e242ef5166b5f343daa0dea",
+    "batch_id": "batch-0001",
+    "spans": [
+      {
+        "lane": "general",
+        "sample_id": "general-002",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "coding",
+        "sample_id": "coding-000",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "cf7a078046f70e5ee4a4761d710bd009893aa5d72b3ffd7057e941cc79eeed9e",
+    "batch_id": "batch-0002",
+    "spans": [
+      {
+        "lane": "coding",
+        "sample_id": "coding-001",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "coding",
+        "sample_id": "coding-002",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "1a10cb0d4ce5634bd22c6646398e43cad0d70055ed18ddb3c56d08cb51dedafe",
+    "batch_id": "batch-0003",
+    "spans": [
+      {
+        "lane": "reasoning",
+        "sample_id": "reasoning-000",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "reasoning",
+        "sample_id": "reasoning-001",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "fbe4183b7f4c0a64be9a496dd0499ca01ebaf023ecb4efbb9048416d89cf2878",
+    "batch_id": "batch-0004",
+    "spans": [
+      {
+        "lane": "agentic",
+        "sample_id": "agentic-000",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "agentic",
+        "sample_id": "agentic-001",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "9ea59ec289808e8a152dc9bd053c1283ee661b3c70e32196a17c5f5bece545e1",
+    "batch_id": "batch-0005",
+    "spans": [
+      {
+        "lane": "indic",
+        "sample_id": "indic-000",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "indic",
+        "sample_id": "indic-001",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "0e22f7dd665c01d832b083b6cc6e0ab73dc5389d98cea555e6734bff0c94718a",
+    "batch_id": "batch-0006",
+    "spans": [
+      {
+        "lane": "math",
+        "sample_id": "math-000",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "math",
+        "sample_id": "math-001",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  },
+  {
+    "batch_hash": "a40f27c2ab24bd00c666a878c67557470c0563873d08e1968b784ea48df46c49",
+    "batch_id": "batch-0007",
+    "spans": [
+      {
+        "lane": "science",
+        "sample_id": "science-000",
+        "token_end": 16,
+        "token_start": 0
+      },
+      {
+        "lane": "science",
+        "sample_id": "science-001",
+        "token_end": 16,
+        "token_start": 0
+      }
+    ]
+  }
+]

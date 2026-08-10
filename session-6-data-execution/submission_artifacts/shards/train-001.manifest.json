@@ -1,0 +1,14 @@
+{
+  "content_hash": "b32d0053c939adf9add40a4523225cf4ace7d728aab2ff935e3f0a38523e8f4c",
+  "document_count": 3,
+  "document_ids": [
+    "coding-000",
+    "coding-001",
+    "coding-002"
+  ],
+  "schema_version": 1,
+  "shard_id": "train-001",
+  "split": "train",
+  "token_count": 119,
+  "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+}

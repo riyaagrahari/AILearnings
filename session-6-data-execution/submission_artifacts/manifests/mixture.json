@@ -1,0 +1,17 @@
+{
+  "floors": {
+    "coding": 0.15,
+    "indic": 0.1
+  },
+  "schedule_hash": "a4362d9d2b614e196f330753940da314014da73df2bb0b0a1205e16d00b2c9f0",
+  "stage": "foundation",
+  "weights": {
+    "agentic": 0.08,
+    "coding": 0.18,
+    "general": 0.35,
+    "indic": 0.12,
+    "math": 0.08,
+    "reasoning": 0.12,
+    "science": 0.07
+  }
+}

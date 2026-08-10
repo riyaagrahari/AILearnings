@@ -1,0 +1,42 @@
+{
+  "crash_recovery": {
+    "evidence": "checkpoints/checkpoint-0004.json",
+    "result": "PASS"
+  },
+  "evaluation_firewall": {
+    "evidence": "run.log + eval manifest",
+    "result": "PASS"
+  },
+  "learning_trace": {
+    "evidence": "ledgers/consumption.jsonl + learning.jsonl",
+    "result": "PASS"
+  },
+  "ledger_integrity": {
+    "evidence": "hash-chained ledgers",
+    "result": "PASS"
+  },
+  "mixture_compliance": {
+    "evidence": "manifests/mixture.json + mixture_actual.json",
+    "result": "PASS"
+  },
+  "opus_audit": {
+    "evidence": "manifests/opus_decisions.json",
+    "result": "PASS"
+  },
+  "packing_correctness": {
+    "evidence": "manifests/batches.json",
+    "result": "PASS"
+  },
+  "replay": {
+    "evidence": "manifests/replay.json",
+    "result": "PASS"
+  },
+  "throughput": {
+    "evidence": "performance.json",
+    "result": "PASS"
+  },
+  "tokenizer_integrity": {
+    "evidence": "manifests/all.json",
+    "result": "PASS"
+  }
+}

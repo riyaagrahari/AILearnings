@@ -1,0 +1,34 @@
+[
+  {
+    "candidate_id": "c-accept",
+    "current_share": 0.2,
+    "decision": "ACCEPT",
+    "floor": 0.1,
+    "quality": 0.9,
+    "reason": "quality_pass"
+  },
+  {
+    "candidate_id": "c-reject",
+    "current_share": 0.2,
+    "decision": "REJECT",
+    "floor": 0.1,
+    "quality": 0.1,
+    "reason": "quality_below_threshold"
+  },
+  {
+    "candidate_id": "c-defer",
+    "current_share": 0.2,
+    "decision": "DEFER",
+    "floor": 0.1,
+    "quality": 0.5,
+    "reason": "quality_needs_review"
+  },
+  {
+    "candidate_id": "c-floor",
+    "current_share": 0.01,
+    "decision": "FLOOR_OVERRIDE",
+    "floor": 0.1,
+    "quality": 0.9,
+    "reason": "protected_floor"
+  }
+]

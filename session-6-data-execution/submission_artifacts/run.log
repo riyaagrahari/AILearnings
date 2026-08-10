@@ -1,0 +1,18 @@
+[PASS] shards created
+[PASS] manifests validated
+[PASS] evaluation data blocked
+[PASS] eval_shard_blocked
+[PASS] mixture compiled
+[PASS] OPUS decisions recorded
+[PASS] batches packed
+[PASS] checkpoint saved
+[PASS] crash simulated
+[PASS] run resumed
+[PASS] resume_next_batch_matched
+[PASS] ledgers verified
+[PASS] historical stream replayed
+[PASS] replay_hash_matched
+[PASS] branch forked
+[PASS] mixture compliance recorded
+[PASS] performance measured
+[PASS] audit completed

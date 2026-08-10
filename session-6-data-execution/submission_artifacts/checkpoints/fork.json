@@ -1,0 +1,7 @@
+{
+  "checkpoint_id": "fork-from-ckpt-0004",
+  "fork_policy": "coding_stem",
+  "lineage_hash": "56416ad0d54c36610aab64fe7b058ccb9f07c8cea1cca5308aeb7d88eb9c172a",
+  "parent_checkpoint": "ckpt-0004",
+  "parent_next_batch": "batch-0004"
+}

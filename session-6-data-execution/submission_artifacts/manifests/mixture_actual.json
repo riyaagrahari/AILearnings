@@ -1,0 +1,21 @@
+{
+  "actual_sample_counts": {
+    "agentic": 2,
+    "coding": 3,
+    "general": 3,
+    "indic": 2,
+    "math": 2,
+    "reasoning": 2,
+    "science": 2
+  },
+  "planned": {
+    "agentic": 0.08,
+    "coding": 0.18,
+    "general": 0.35,
+    "indic": 0.12,
+    "math": 0.08,
+    "reasoning": 0.12,
+    "science": 0.07
+  },
+  "scheduler_order": "deterministic_lane_rank"
+}

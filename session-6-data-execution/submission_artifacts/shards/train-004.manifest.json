@@ -1,0 +1,14 @@
+{
+  "content_hash": "0b006619489bf52fd20053767b0dfe154e26ebe6ec9927e5a335abd46fcc1d18",
+  "document_count": 3,
+  "document_ids": [
+    "math-000",
+    "math-001",
+    "science-000"
+  ],
+  "schema_version": 1,
+  "shard_id": "train-004",
+  "split": "train",
+  "token_count": 168,
+  "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+}

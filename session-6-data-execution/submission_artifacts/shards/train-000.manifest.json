@@ -1,0 +1,14 @@
+{
+  "content_hash": "6af1ec541934197a8414f97448906e52fd247032cb6c0fc8b9c63a52e439fbb9",
+  "document_count": 3,
+  "document_ids": [
+    "general-000",
+    "general-001",
+    "general-002"
+  ],
+  "schema_version": 1,
+  "shard_id": "train-000",
+  "split": "train",
+  "token_count": 167,
+  "tokenizer_hash": "9e46dd3fdd5603b6ba82f2178a4b1e2141062e27601f483a5d8b9c064eb80fb1"
+}

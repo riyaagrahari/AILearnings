@@ -1,0 +1,10 @@
+{
+  "checkpoint_id": "ckpt-0004",
+  "consumption_ledger_offset": 4,
+  "learning_ledger_offset": 4,
+  "mixture_stage": "foundation",
+  "next_batch_hash": "fbe4183b7f4c0a64be9a496dd0499ca01ebaf023ecb4efbb9048416d89cf2878",
+  "next_batch_id": "batch-0004",
+  "rng_state_hash": "a54eb399062ef744d9476fa850aacd9b2071a20d2c0b0e69b67d0b3d35bdd1a8",
+  "step": 4
+}
